@@ -7,9 +7,8 @@ import jinja2
 import click
 
 
-def hello(verbose):
+def hello(verbose, orig_path):
     """Hello case."""
-    orig_path = os.path.abspath("hello") + "\\"
     try:
         with open(orig_path+'/config.json') as json_file:
             data = json.load(json_file)
@@ -25,7 +24,7 @@ def hello(verbose):
                                       "/templates/"), autoescape=True)
         env_template = environ.get_template('index.html')
         rendered_tem = env_template.render(words=data[0]['context']['words'])
-        new_pos = orig_path + "html\\"
+        new_pos = orig_path + "/html"
     except jinja2.exceptions.TemplateError:
         print("Error_Jinja: Failed to render")
         exit(1)
@@ -34,7 +33,7 @@ def hello(verbose):
         exit(1)
     try:
         os.mkdir(new_pos)
-        out = open(new_pos + "index.html", 'w')
+        out = open(new_pos + "/index.html", 'w')
     except FileExistsError:
         print("Error_Output_Dir: output directory already contains files html")
         exit(1)
@@ -43,9 +42,8 @@ def hello(verbose):
     out.write(rendered_tem)
 
 
-def hello_css(verbose):
+def hello_css(verbose, orig_path):
     """Hello_css case."""
-    orig_path = os.path.abspath("hello_css") + "\\"
     try:
         with open(orig_path + '/config.json') as json_file:
             data = json.load(json_file)
@@ -61,7 +59,7 @@ def hello_css(verbose):
                                       "/templates/"), autoescape=True)
         env_template = environ.get_template('index.html')
         rendered_tem = env_template.render(words=data[0]['context']['words'])
-        new_pos = orig_path + "html\\"
+        new_pos = orig_path + "/html"
     except jinja2.exceptions.TemplateError:
         print("Error_Jinja: Failed to render")
         exit(1)
@@ -70,17 +68,17 @@ def hello_css(verbose):
         exit(1)
     try:
         os.mkdir(new_pos)
-        os.mkdir(new_pos + 'css\\')
-        out = open(new_pos + "index.html", 'w')
+        os.mkdir(new_pos + '/css')
+        out = open(new_pos + "/index.html", 'w')
     except FileExistsError:
         print("Error_Output_Dir: "
               "output directory already contains files html")
         exit(1)
     shutil.copyfile(orig_path +
-                    "static\\css\\style.css",
-                    new_pos + 'css\\style.css')
+                    "/static/css/style.css",
+                    new_pos + '/css/style.css')
     if verbose:
-        print("Copied " + orig_path + 'static\\ -> ' + new_pos)
+        print("Copied " + orig_path + '/static -> ' + new_pos)
         print("Rendered index.html -> " + new_pos + 'index.html')
     out.write(rendered_tem)
 
@@ -108,7 +106,7 @@ def render_temp(orig_path, verbose, data):
                                      autoescape=True)
         env_template = environ.get_template('index.html')
         rendered_tem = env_template.render(context=data[0]['context'])
-        new_pos = orig_path + "html\\"
+        new_pos = orig_path + "/html"
     except jinja2.exceptions.TemplateError:
         print("Error_Jinja: Failed to render")
         exit(1)
@@ -117,15 +115,15 @@ def render_temp(orig_path, verbose, data):
               "template cannot be found does not exist")
         exit(1)
     try:
-        shutil.copytree(orig_path + 'static\\', new_pos)
+        shutil.copytree(orig_path + '/static', new_pos)
         if verbose:
             print("Copied " + orig_path +
-                  'static\\ -> ' + orig_path + 'html\\')
+                  '/static -> ' + orig_path + 'html\\')
         out = open(new_pos + "index.html", 'w')
         if verbose:
             print("Rendered index.html -> " + orig_path + 'html\\index.html')
         out.write(rendered_tem)
-        os.mkdir(new_pos+"/u/")
+        os.mkdir(new_pos+"/u")
     except FileExistsError:
         print("Error_Output_Dir: output directory already contains files html")
         exit(1)
@@ -140,15 +138,15 @@ def render_user(environ, data, new_pos, verbose, i):
     try:
         env_template = environ.get_template('user.html')
         rendered_tem = env_template.render(context=data[i]['context'])
-        user = new_pos + "u\\" + data[i]["context"]["username"] + '\\'
+        user = new_pos + "/u/" + data[i]["context"]["username"]
         os.mkdir(user)
-        out = open(user + "index.html", 'w')
+        out = open(user + "/index.html", 'w')
         if verbose:
             print("Rendered index.html -> " + user + 'index.html')
         out.write(rendered_tem)
         i = i + 1
-        os.mkdir(user + "/followers/")
-        os.mkdir(user + "/following/")
+        os.mkdir(user + "/followers")
+        os.mkdir(user + "/following")
         env_template = environ.get_template('following.html')
         rendered_tem = env_template.render(context=data[i]['context'])
         out = open(user + "/following/index.html", 'w')
@@ -159,7 +157,7 @@ def render_user(environ, data, new_pos, verbose, i):
         i = i + 1
         env_template = environ.get_template('followers.html')
         rendered_tem = env_template.render(context=data[i]['context'])
-        out = open(user + "followers\\index.html", 'w')
+        out = open(user + "/followers/index.html", 'w')
         if verbose:
             print("Rendered index.html -> " + user +
                   "followers\\index.html")
@@ -184,15 +182,17 @@ def render_user(environ, data, new_pos, verbose, i):
 @click.option('-v', '--verbose', is_flag=True, help='Print more output')
 def main(verbose, input_dir):
     """Templated Static website generator."""
-    if input_dir == "hello":
-        hello(verbose)
+    orig_path = os.path.abspath(input_dir)
+    name = os.path.split(orig_path)
+    orig_path = orig_path
+    if name[1] == "hello":
+        hello(verbose, orig_path)
         exit(0)
-    if input_dir == "hello_css":
-        hello_css(verbose)
+    if name[1] == "hello_css":
+        hello_css(verbose, orig_path)
         exit(0)
-    orig_path = os.path.abspath(input_dir) + "\\"
     data = json_open(orig_path)
-    new_pos = orig_path + "html\\"
+    new_pos = orig_path + "/html"
     environ = render_temp(orig_path, verbose, data)
     i = 1
     while data[i]["template"] != "post.html":
@@ -201,16 +201,16 @@ def main(verbose, input_dir):
         while i < len(data) - 1:
             env_template = environ.get_template('post.html')
             p_id = data[i]["context"]["postid"]
-            os.makedirs(new_pos+"/p//"+p_id+'/')
+            os.makedirs(new_pos+"/p/"+p_id)
             rendered_tem = env_template.render(context=data[i]['context'])
-            out = open(new_pos + '/p//' + p_id + '//index.html', 'w')
+            out = open(new_pos + '/p/' + p_id + '/index.html', 'w')
             if verbose:
                 print("Rendered index.html -> " + new_pos +
                       'p\\' + p_id + '\\index.html')
             out.write(rendered_tem)
             i = i + 1
         env_template = environ.get_template('explore.html')
-        os.mkdir(new_pos + "/explore/")
+        os.mkdir(new_pos + "/explore")
         rendered_tem = env_template.render(context=data[i]['context'])
         out = open(new_pos + "/explore/index.html", 'w')
     except jinja2.exceptions.TemplateError:
